@@ -56,6 +56,10 @@ module Appsignal
       end
 
       def complete_current!
+        unless current.raised_error?
+          sample_rate = Appsignal.config[:sample_actions][current.action]
+          current.discard! if sample_rate && sample_rate.to_f < rand
+        end
         current.complete
       rescue => e
         Appsignal.logger.error(
@@ -73,7 +77,7 @@ module Appsignal
     end
 
     attr_reader :ext, :transaction_id, :action, :namespace, :request, :paused, :tags, :options,
-      :discarded, :breadcrumbs
+      :discarded, :breadcrumbs, :raised_error
 
     # @!attribute params
     #   Attribute for parameters of the transaction.
@@ -94,6 +98,7 @@ module Appsignal
       @request = request
       @paused = false
       @discarded = false
+      @raised_error = false
       @tags = {}
       @breadcrumbs = []
       @store = Hash.new({})
@@ -143,6 +148,10 @@ module Appsignal
 
     def discarded?
       @discarded == true
+    end
+
+    def raised_error?
+      @raised_error == true
     end
 
     def store(key)
@@ -368,6 +377,7 @@ module Appsignal
       return unless error
       return unless Appsignal.active?
 
+      @raised_error = true
       backtrace = cleaned_backtrace(error.backtrace)
       @ext.set_error(
         error.class.name,

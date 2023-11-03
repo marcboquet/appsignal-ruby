@@ -27,6 +27,7 @@ module Appsignal
       :filter_metadata => [],
       :filter_parameters => [],
       :filter_session_data => [],
+      :sample_actions => {},
       :ignore_actions => [],
       :ignore_errors => [],
       :ignore_namespaces => [],
